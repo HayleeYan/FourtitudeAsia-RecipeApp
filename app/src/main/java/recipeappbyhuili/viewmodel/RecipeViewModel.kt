@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import recipeappbyhuili.data.RawRecipeDAO
+import recipeappbyhuili.data.RecipeDetail
 import recipeappbyhuili.data.RecipeRepository
 import recipeappbyhuili.data.RecipeType
 import recipeappbyhuili.data.toRecipeType
@@ -18,13 +19,14 @@ class RecipeViewModel(
 ) : ViewModel()
 {
 
-    private val _recipeTypeList = MutableLiveData<List<RecipeType>>()
-    private val _selectedRecipeType = MutableLiveData<RecipeType>()
+    private val _recipeTypeList = MutableLiveData<List<RecipeType>?>()
+    private val _recipeList = MutableLiveData<List<RecipeDetail>?>()
 
-    val recipeTypeList: LiveData<List<RecipeType>> = _recipeTypeList
-    val selectedRecipeType: LiveData<RecipeType> = _selectedRecipeType
+    val recipeTypeList: LiveData<List<RecipeType>?> = _recipeTypeList
+    val recipeList: LiveData<List<RecipeDetail>?> = _recipeList
 
     private var masterRecipeData: ArrayList<RawRecipeDAO>? = null
+    private var selectedRecipeType: RecipeType? = null
 
     fun loadRecipeData()
     {
@@ -46,20 +48,30 @@ class RecipeViewModel(
         }
     }
 
-    fun onRecipeTypeSelected()
+    fun onRecipeTypeSelected(position: Int)
     {
+        if (position in -1..(recipeTypeList.value?.size ?: 0))
+        {
+            selectedRecipeType = recipeTypeList.value?.get(position)
 
+            val recipeList =  masterRecipeData?.firstOrNull { it.type == selectedRecipeType?.type }
+
+            if (recipeList != null)
+            {
+                _recipeList.value = recipeList.list
+            }
+        }
     }
 
     fun selectedRecipeTypeIndex(): Int
     {
-        return if (selectedRecipeType.value == null)
+        return if (selectedRecipeType == null)
         {
             -1
         }
         else
         {
-            selectedRecipeType.value?.let { recipeTypeList.value?.indexOf(it) } ?: -1
+            selectedRecipeType?.let { recipeTypeList.value?.indexOf(it) } ?: -1
         }
     }
 

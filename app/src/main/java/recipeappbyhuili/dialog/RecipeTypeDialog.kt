@@ -18,6 +18,7 @@ class RecipeTypeDialog : DialogFragment() {
 
     private val recipeViewModel: RecipeViewModel by activityViewModels()
     private var recipeTypeList: List<RecipeType>? = null
+    private var currentSelectedPosition: Int = -1
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         recipeTypeList = recipeViewModel.recipeTypeList.value
@@ -34,10 +35,11 @@ class RecipeTypeDialog : DialogFragment() {
         }
 
         val recipeTypeDisplayList: Array<CharSequence> = recipeTypeList!!.map { it.label }.toTypedArray()
+        currentSelectedPosition = recipeViewModel.selectedRecipeTypeIndex()
 
         var dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("Recipe Types")
-            .setSingleChoiceItems(recipeTypeDisplayList, recipeViewModel.selectedRecipeTypeIndex(), null)
+            .setSingleChoiceItems(recipeTypeDisplayList,currentSelectedPosition, singleChoiceItemSelected)
             .setPositiveButton("Confirm", positiveButtonAction)
 
         if (recipeViewModel.selectedRecipeTypeIndex() > -1)
@@ -48,12 +50,16 @@ class RecipeTypeDialog : DialogFragment() {
         return dialog.create()
     }
 
+    private val singleChoiceItemSelected: ((DialogInterface, Int) -> Unit) = { dialog, which ->
+        currentSelectedPosition = which
+    }
+
     private val positiveButtonAction: ((DialogInterface, Int) -> Unit) = { dialog, which ->
-        recipeViewModel.onRecipeTypeSelected()
+        recipeViewModel.onRecipeTypeSelected(currentSelectedPosition)
     }
 
     private val negativeButtonAction: ((DialogInterface, Int) -> Unit) = { dialog, which ->
-        if (recipeViewModel.selectedRecipeTypeIndex() == -1)
+        if (currentSelectedPosition == -1)
         {
             Toast.makeText(context, "Please choose 1 to proceed!", Toast.LENGTH_SHORT).show()
         }
