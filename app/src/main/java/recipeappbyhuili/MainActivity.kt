@@ -1,6 +1,7 @@
 package recipeappbyhuili
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -8,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import recipeappbyhuili.dialog.RecipeTypeDialog
 import recipeappbyhuili.viewmodel.RecipeViewModel
 
@@ -46,17 +49,24 @@ class MainActivity : AppCompatActivity() {
 
         recipeViewModel.recipeList.observe(this) { recipeList ->
 
-            recipeList?.let {
+            val textView = findViewById<TextView>(R.id.main_tv_recipe_name)
+            val recyclerView: RecyclerView = findViewById(R.id.main_rv_recipe_list)
 
-                try {
-                    val first = it[0]
+            if (recipeList.isNullOrEmpty())
+            {
+                recyclerView.visibility = View.GONE
+                textView.visibility = View.VISIBLE
+                textView.text = "No recipe found!"
+            }
+            else
+            {
+                recyclerView.visibility = View.VISIBLE
+                textView.visibility = View.GONE
 
-                    findViewById<TextView>(R.id.main_tv_recipe_name).text = first.name
-                }
-                catch (indexError: IndexOutOfBoundsException)
-                {
-                    findViewById<TextView>(R.id.main_tv_recipe_name).text = "No recipe found!"
-                }
+                val titleList = recipeList.map { it.name }.toTypedArray()
+
+                recyclerView.adapter = RecipeTitleAdapter(titleList)
+                recyclerView.layoutManager = LinearLayoutManager(this)
             }
 
         }
