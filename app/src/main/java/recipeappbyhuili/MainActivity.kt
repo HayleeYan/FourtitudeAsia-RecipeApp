@@ -1,4 +1,4 @@
-package hui.study.odyssey.fourtitudeasiarecipeappbyhuili
+package recipeappbyhuili
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

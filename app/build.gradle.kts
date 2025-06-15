@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "hui.study.odyssey.fourtitudeasiarecipeappbyhuili"
+    namespace = "recipeappbyhuili"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "hui.study.odyssey.fourtitudeasiarecipeappbyhuili"
+        applicationId = "fourtitudeasia.recipeapp.byhuili"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
