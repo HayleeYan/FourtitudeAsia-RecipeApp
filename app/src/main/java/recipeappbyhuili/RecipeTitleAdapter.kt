@@ -6,14 +6,30 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class RecipeTitleAdapter(private val dataSet: Array<String>): RecyclerView.Adapter<RecipeTitleAdapter.ViewHolder>()
+interface OnRecipeListClickListener {
+    fun onRecipeClick(position: Int)
+}
+
+class RecipeTitleAdapter(
+    private val dataSet: Array<String>,
+    private val listener: OnRecipeListClickListener
+): RecyclerView.Adapter<RecipeTitleAdapter.ViewHolder>()
 {
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
     {
         val textView: TextView
 
         init {
             textView = view.findViewById(R.id.viewholder_tv_title)
+
+            view.setOnClickListener {
+                val position = adapterPosition
+
+                if (position != RecyclerView.NO_POSITION)
+                {
+                    listener.onRecipeClick(position)
+                }
+            }
         }
     }
 

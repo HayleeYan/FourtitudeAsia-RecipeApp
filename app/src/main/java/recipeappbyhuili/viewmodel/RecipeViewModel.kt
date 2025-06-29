@@ -8,43 +8,34 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import recipeappbyhuili.data.RawRecipeDAO
 import recipeappbyhuili.data.RecipeDetail
 import recipeappbyhuili.data.RecipeRepository
-import recipeappbyhuili.data.RecipeType
-import recipeappbyhuili.data.toRecipeType
 
 class RecipeViewModel(
     private val recipeRepository: RecipeRepository
 ) : ViewModel()
 {
 
-    private val _recipeTypeList = MutableLiveData<List<RecipeType>?>()
-    private val _recipeList = MutableLiveData<List<RecipeDetail>?>()
+    private val _recipeTypeList = MutableLiveData<List<String>?>()
+    val recipeTypeList: LiveData<List<String>?> = _recipeTypeList
 
-    val recipeTypeList: LiveData<List<RecipeType>?> = _recipeTypeList
-    val recipeList: LiveData<List<RecipeDetail>?> = _recipeList
+    private val _recipeList = MutableLiveData<Pair<String?, List<RecipeDetail>?>>()
+    val recipeList: LiveData<Pair<String?, List<RecipeDetail>?>> = _recipeList
 
-    private var masterRecipeData: ArrayList<RawRecipeDAO>? = null
-    private var selectedRecipeType: RecipeType? = null
+    private var masterRecipeTypeData: List<String>? = listOf()
+    var selectedRecipeType: String? = null
 
-    fun loadRecipeData()
+    fun loadRecipeData(context: Context)
     {
         viewModelScope.launch(Dispatchers.IO) {
-            val loadedRecipeTypeList = recipeRepository.loadRecipeTypesFromAssets()
+            masterRecipeTypeData = recipeRepository.loadRecipeTypesFromAssets(context)
 
-            masterRecipeData = if (loadedRecipeTypeList.isNotEmpty())
+            if (selectedRecipeType == null)
             {
-                ArrayList(loadedRecipeTypeList)
-            }
-            else
-            {
-                null
+                selectedRecipeType = masterRecipeTypeData?.get(0)
             }
 
-            val recipeTypeList = masterRecipeData?.map { it.toRecipeType() }
-
-            _recipeTypeList.postValue(recipeTypeList)
+            _recipeTypeList.postValue(masterRecipeTypeData)
         }
     }
 
@@ -52,44 +43,48 @@ class RecipeViewModel(
     {
         if (position in -1..(recipeTypeList.value?.size ?: 0))
         {
-            selectedRecipeType = recipeTypeList.value?.get(position)
+            masterRecipeTypeData?.let {
 
-            val recipeList =  masterRecipeData?.firstOrNull { it.type == selectedRecipeType?.type }
+                selectedRecipeType = it[position]
 
-            if (recipeList != null)
-            {
-                _recipeList.value = recipeList.list
+                viewModelScope.launch {
+                    val filteredRecipeList = recipeRepository.filterRecipeByCategory(it[position])
+
+                    _recipeList.value = Pair(selectedRecipeType, filteredRecipeList)
+                }
+
             }
         }
     }
 
-    fun selectedRecipeTypeIndex(): Int
-    {
-        return if (selectedRecipeType == null)
-        {
-            -1
-        }
-        else
-        {
-            selectedRecipeType?.let { recipeTypeList.value?.indexOf(it) } ?: -1
+    fun refreshRecipeList() {
+        viewModelScope.launch {
+            val filteredRecipeList = recipeRepository.filterRecipeByCategory(selectedRecipeType ?: "")
+
+            _recipeList.value = Pair(selectedRecipeType, filteredRecipeList)
         }
     }
 
+    fun getSelectedRecipeId(position: Int) : Int
+    {
+        return _recipeList.value?.second?.get(position)?.id ?: -1
+    }
+
     companion object {
-        fun provideFactory(context: Context): ViewModelProvider.Factory
+        fun provideFactory(repository: RecipeRepository): ViewModelProvider.Factory
         {
             return object : ViewModelProvider.Factory {
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    val repository = RecipeRepository(context.applicationContext)
 
-                    if (modelClass.isAssignableFrom(RecipeViewModel::class.java))
-                    {
-                        @Suppress("UNCHECKED_CAST")
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+
+                    if (modelClass.isAssignableFrom(RecipeViewModel::class.java)) {
                         return RecipeViewModel(repository) as T
                     }
 
                     throw IllegalArgumentException("Unknown ViewModel class")
                 }
+
             }
         }
     }
